@@ -79,7 +79,7 @@ int main()
   int **spin_matrix, n_spins, mcs;
   double w[17], average[5], initial_temp, final_temp, E, M, temp_step;
   n_spins = 4;
-  mcs = 1000000;
+  mcs = 10000000;
   initial_temp= 1;
   final_temp = 2;
   temp_step = 2;
@@ -111,17 +111,17 @@ int main()
     cout<<temp<<endl;
 
     cout<<"<e> ; ";
-    cout<<average[0]/(mcs*n_spins)<<endl;
+    cout<<average[0]/(mcs*n_spins*n_spins)<<endl;
 
     cout<<"Cv ; ";
-    cout<<( average[1]/(mcs) ) - ((average[0]/(mcs))*(average[0]/(mcs)))<<endl;
+    cout<<(( average[1]/(mcs) ) - ((average[0]/(mcs))*(average[0]/(mcs))))/(n_spins*n_spins)<<endl;
 
 
     cout<<"<m> ; ";
-    cout<<average[2]/(mcs*n_spins)<<endl;
+    cout<<average[2]/(mcs*n_spins*n_spins)<<endl;
 
     cout<<"Susceptibilitet ; ";
-    cout<<( average[3]/(mcs) ) - ((average[2]/(mcs))*(average[2]/(mcs)))<<endl;
+    cout<<(( average[3]/(mcs) ) - ((average[4]/(mcs))*(average[4]/(mcs))))/(n_spins*n_spins)<<endl;
     cout<<"\n\n\n";
 
     cout<<average[4]<<endl;
