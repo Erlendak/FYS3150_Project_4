@@ -3,7 +3,7 @@
 #include <iomanip>
 #include "lib.h"
 #include <string>
-
+#include <unittests.h>
 inline int periodic(int i, int limit, int add) {
   return (i+limit+add) % (limit);
 }
@@ -74,15 +74,15 @@ using namespace  std;
 
 int main()
 {
-
+  test_temp_1();
   long idum;
   int **spin_matrix, n_spins, mcs;
   double w[17], average[5], initial_temp, final_temp, E, M, temp_step;
   n_spins = 4;
-  mcs = 1000000;
-  initial_temp=1;
+  mcs = 10000000;
+  initial_temp= 1;
   final_temp = 2;
-  temp_step = 1;
+  temp_step = 2;
   spin_matrix = (int**) matrix(n_spins, n_spins, sizeof(int));
   idum = -1; // random starting point
   for ( double temp = initial_temp; temp <= final_temp; temp+=temp_step){
@@ -111,13 +111,25 @@ int main()
     cout<<temp<<endl;
 
     cout<<"<e> ; ";
-    cout<<average[0]/(mcs*n_spins)<<endl;
+    cout<<average[0]/(mcs*n_spins*n_spins)<<endl;
+
+    cout<<"Cv ; ";
+    cout<<(( average[1]/(mcs) ) - ((average[0]/(mcs))*(average[0]/(mcs))))/(n_spins*n_spins)<<endl;
+
+
     cout<<"<m> ; ";
-    cout<<average[2]/(mcs*n_spins)<<endl;
+    cout<<average[2]/(mcs*n_spins*n_spins)<<endl;
+
+    cout<<"Susceptibilitet ; ";
+    cout<<(( average[3]/(mcs) ) - ((average[4]/(mcs))*(average[4]/(mcs))))/(n_spins*n_spins)<<endl;
     cout<<"\n\n\n";
-    //cout<<average[4]<<endl;
+
+    cout<<average[4]<<endl;
   }
   free_matrix((void **) spin_matrix); // free memory
   //ofile.close();  // close output file
+
+
+
   return 0;
 }
