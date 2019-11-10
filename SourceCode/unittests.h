@@ -5,10 +5,11 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
+#include <monte_caro.h>
 using namespace std;
 
 void test_temp_1(){
-    int n_spins = 4; //La stå for senere bruk!
+    int n_spins = 2; //La stå for senere bruk!
     double temp= 1;
     double j = 1;
     double kb = 1;//1.38064852*pow(10,-23)
@@ -24,6 +25,33 @@ void test_temp_1(){
 
   cout<<z <<endl;
     cout<<"\n\n" <<endl;
+    int mcs = 1000000;
+    vec average = temperature_integration(n_spins, mcs, temp);
+    cout<<"Antall elektroner som spinner i positiv rettning ; ";
+    cout<<n_spins*n_spins<<endl;
+
+    cout<<"Antall Monte Carlo integrasjonspoeng ; ";
+    cout<<mcs<<endl;
+
+    cout<<"Temperatur i simuleringen ; ";
+    cout<<temp<<endl;
+
+    cout<<"<e> ; ";
+    cout<<average(0)/(mcs*n_spins*n_spins)<<endl;
+
+    cout<<"Cv ; ";
+    cout<<(( average(1)/(mcs) ) - ((average(0)/(mcs))*(average(0)/(mcs))))/(n_spins*n_spins)<<endl;
+
+
+    cout<<"<m> ; ";
+    cout<<average(2)/(mcs*n_spins*n_spins)<<endl;
+
+    cout<<"<|m|> ; ";
+    cout<<average(4)/(mcs*n_spins*n_spins)<<endl;
+
+    cout<<"Susceptibilitet ; ";
+    cout<<(( average(3)/(mcs) ) - ((average(4)/(mcs))*(average(4)/(mcs))))/(n_spins*n_spins)<<endl;
+    cout<<"\n\n\n";
 }
 
 
