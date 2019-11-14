@@ -17,7 +17,7 @@ inline int periodic(int i, int limit, int add) {
   return (i+limit+add) % (limit);
 }
 
-void Metropolis(int n_spins, long& idum, int **spin_matrix, double& E, double&M, double *w)
+void Counting_Metropolis(int n_spins, long& idum, int **spin_matrix, double& E, double&M, double *w, double &count)
 {
   // loop over all spins
   for(int y =0; y < n_spins; y++) {
@@ -36,18 +36,20 @@ void Metropolis(int n_spins, long& idum, int **spin_matrix, double& E, double&M,
         // update energy and magnetization
         M += (double) 2*spin_matrix[iy][ix];
         E += (double) deltaE;
+        count +=1;
       }
     }
   }
-}
+} // end of Metropolis sampling over spins
 
-void initialize(int n_spins, double temp, int **spin_matrix,
+// function to initialise energy, spin matrix and magnetization
+void cold_start_initialize(int n_spins, double temp, int **spin_matrix,
         double& E, double& M)
 {
   // setup spin matrix and intial magnetization
   for(int y =0; y < n_spins; y++) {
     for (int x= 0; x < n_spins; x++){
-      if (temp > 1.5) spin_matrix[y][x] = 1; // spin orientation for the ground state
+      spin_matrix[y][x] = 1; // spin orientation for the ground state
       M +=  (double) spin_matrix[y][x];
     }
   }
@@ -59,8 +61,57 @@ void initialize(int n_spins, double temp, int **spin_matrix,
      spin_matrix[y][periodic(x,n_spins,-1)]);
     }
   }
-}
+}// end function initialise
 
+// function to initialise energy, spin matrix and magnetization
+void dynamic_initialize(int n_spins, double temp, int **spin_matrix,
+        double& E, double& M, double initial_temp)
+{
+  // setup spin matrix and intial magnetization
+  for(int y =0; y < n_spins; y++) {
+    for (int x= 0; x < n_spins; x++){
+      if (temp <= initial_temp) spin_matrix[y][x] = 1; // spin orientation for the ground state
+      M +=  (double) spin_matrix[y][x];
+    }
+  }
+  // setup initial energy
+  for(int y =0; y < n_spins; y++) {
+    for (int x= 0; x < n_spins; x++){
+      E -=  (double) spin_matrix[y][x]*
+    (spin_matrix[periodic(y,n_spins,-1)][x] +
+     spin_matrix[y][periodic(x,n_spins,-1)]);
+    }
+  }
+}// end function initialise
+
+// function to initialise energy, spin matrix and magnetization
+void random_initialize(int n_spins, double temp, int **spin_matrix,
+        double& E, double& M)
+{
+  random_device ran;
+  mt19937_64 gen(ran());
+  uniform_real_distribution<double> RandomNumberGenerator(0.0,1.0);
+  // setup spin matrix and intial magnetization
+  for(int y =0; y < n_spins; y++) {
+    for (int x= 0; x < n_spins; x++){
+      if ( RandomNumberGenerator(gen)>0.5){
+          spin_matrix[y][x] = 1; // spin orientation.
+      }
+      else {
+      spin_matrix[y][x] = -1; // spin orientation.
+      }
+      M +=  (double) spin_matrix[y][x];
+    }
+  }
+  // setup initial energy
+  for(int y =0; y < n_spins; y++) {
+    for (int x= 0; x < n_spins; x++){
+      E -=  (double) spin_matrix[y][x]*
+    (spin_matrix[periodic(y,n_spins,-1)][x] +
+     spin_matrix[y][periodic(x,n_spins,-1)]);
+    }
+  }
+}// end function initialise
 
 ofstream ofile;
 // inline function for periodic boundary conditions
@@ -84,12 +135,11 @@ void read_input(int &n_spins, int &mcs, double &initial_temp,double &final_temp,
 
 };
 
-void output(int n_spins, int mcs, double temp, double *average){
-    cout<<"Antall elektroner som spinner i positiv rettning ; ";
-    cout<<n_spins*n_spins<<endl;
-
+void output(int n_spins, int mcs, double temp, double *average, double count){
     cout<<"Antall Monte Carlo integrasjonspoeng ; ";
     cout<<mcs<<endl;
+    /*cout<<"Antall elektroner som spinner i positiv rettning ; ";
+    cout<<n_spins*n_spins<<endl;
 
     cout<<"Temperatur i simuleringen ; ";
     cout<<temp<<endl;
@@ -109,6 +159,8 @@ void output(int n_spins, int mcs, double temp, double *average){
 
     cout<<"Susceptibilitet ; ";
     cout<<(( average[3]/(mcs) ) - ((average[4]/(mcs))*(average[4]/(mcs))))/(n_spins*n_spins)<<endl;
+    */
+
     ofile <<temp;
     ofile << setw(20) << setprecision(8) <<  mcs;
     ofile << setw(20) << setprecision(8) <<  average[0]/(mcs*n_spins*n_spins);
@@ -116,7 +168,7 @@ void output(int n_spins, int mcs, double temp, double *average){
     ofile << setw(20) << setprecision(8) << average[2]/(mcs*n_spins*n_spins);
     ofile << setw(20) << setprecision(8) << average[4]/(mcs*n_spins*n_spins);
     ofile << setw(20) << setprecision(8) <<  (( average[3]/(mcs) ) - ((average[4]/(mcs))*(average[4]/(mcs))))/(n_spins*n_spins)<<endl;
-
+    ofile << setw(20) << setprecision(8) <<  count;
 };
 
 // Function to read in data from screen
@@ -134,7 +186,7 @@ void test()
   char *outfilename;
   long idum;
   int **spin_matrix, n_spins, ipoint;
-  double w[17], average[5], initial_temp, final_temp, E, M, temp_step;
+  double w[17], average[5], initial_temp, final_temp, E, M, temp_step, count;
 
 
   outfilename="test.dat";
@@ -144,25 +196,25 @@ void test()
   read_input(n_spins, ipoint, initial_temp, final_temp, temp_step);
   spin_matrix = (int**) matrix(n_spins, n_spins, sizeof(int));
   idum = -1; // random starting point
-  for (int mcs = 100; mcs<= ipoint; mcs *= 2){
+  for (int mcs = 100; mcs<= ipoint; mcs *= 5){
   for ( double temp = initial_temp; temp <= final_temp; temp+=temp_step){
     //    initialise energy and magnetization
-    E = M = 0.;
+    E = count = M = 0.;
     // setup array for possible energy changes
     for( int de =-8; de <= 8; de++) w[de+8] = 0;
     for( int de =-8; de <= 8; de+=4) w[de+8] = exp(-de/temp);
     // initialise array for expectation values
     for( int i = 0; i < 5; i++) average[i] = 0.;
-    initialize(n_spins, (double) temp, spin_matrix, E, M);
+    random_initialize(n_spins, (double) temp, spin_matrix, E, M);
     // start Monte Carlo computation
     for (int cycles = 1; cycles <= mcs; cycles++){
-      Metropolis(n_spins, idum, spin_matrix, E, M, w);
+      Counting_Metropolis(n_spins, idum, spin_matrix, E, M, w, count);
       // update expectation values
       average[0] += E;    average[1] += E*E;
       average[2] += M;    average[3] += M*M; average[4] += fabs(M);
     }
-    // print results
-    output(n_spins, mcs, temp, average);
+    cout<< count<<endl;
+    output(n_spins, mcs, temp, average, count);
   }}
   free_matrix((void **) spin_matrix); // free memory
   ofile.close();  // close output file
