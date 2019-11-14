@@ -7,7 +7,7 @@
 #include <string>
 #include <monte_carlo.h>
 using namespace std;
-/*
+
 void test_temp_1(){
     int n_spins = 2; //La stå for senere bruk!
     double temp= 1;
@@ -26,7 +26,7 @@ void test_temp_1(){
   cout<<z <<endl;
     cout<<"\n\n" <<endl;
     int mcs = 1000000;
-    vec average = temperature_integration(n_spins, mcs, temp);
+    vec average = isingmodel_cold_start(n_spins, mcs, temp);
     cout<<"Antall elektroner som spinner i positiv rettning ; ";
     cout<<n_spins*n_spins<<endl;
 
@@ -54,5 +54,5 @@ void test_temp_1(){
     cout<<"\n\n\n";
 }
 
-*/
+
 #endif // UNITTESTS_H
