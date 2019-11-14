@@ -5,9 +5,9 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
-#include <monte_caro.h>
+#include <monte_carlo.h>
 using namespace std;
-
+/*
 void test_temp_1(){
     int n_spins = 2; //La stå for senere bruk!
     double temp= 1;
@@ -54,5 +54,5 @@ void test_temp_1(){
     cout<<"\n\n\n";
 }
 
-
+*/
 #endif // UNITTESTS_H
