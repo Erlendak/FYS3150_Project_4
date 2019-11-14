@@ -38,13 +38,54 @@ void Metropolis(int n_spins, long& idum, int **spin_matrix, double& E, double&M,
   }
 }
 
-void initialize(int n_spins, double temp, int **spin_matrix,
+void Counting_Metropolis(int n_spins, long& idum, int **spin_matrix, double& E, double&M, double *w, double *count)
+{
+  // loop over all spins
+  for(int y =0; y < n_spins; y++) {
+    for (int x= 0; x < n_spins; x++){
+      // Find random position
+      int ix = (int) (ran1(&idum)*(double)n_spins);
+      int iy = (int) (ran1(&idum)*(double)n_spins);
+      int deltaE =  2*spin_matrix[iy][ix]*
+    (spin_matrix[iy][periodic(ix,n_spins,-1)]+
+     spin_matrix[periodic(iy,n_spins,-1)][ix] +
+     spin_matrix[iy][periodic(ix,n_spins,1)] +
+     spin_matrix[periodic(iy,n_spins,1)][ix]);
+      // Here we perform the Metropolis test
+      if ( ran1(&idum) <= w[deltaE+8] ) {
+    spin_matrix[iy][ix] *= -1;  // flip one spin and accept new spin config
+        // update energy and magnetization
+        M += (double) 2*spin_matrix[iy][ix];
+        E += (double) deltaE;
+        count[0] +=1;
+        if((double) deltaE == -8){
+            count[1] += 1;
+        }
+        if((double) deltaE == -4){
+            count[2] += 1;
+        }
+        if((double) deltaE == 0){
+            count[3] += 1;
+        }
+        if((double) deltaE == 8){
+            count[4] += 1;
+        }
+        if((double) deltaE == 4){
+            count[5] += 1;
+        }
+      }
+    }
+  }
+} // end of Metropolis sampling over spins
+
+// function to initialise energy, spin matrix and magnetization
+void cold_start_initialize(int n_spins, double temp, int **spin_matrix,
         double& E, double& M)
 {
   // setup spin matrix and intial magnetization
   for(int y =0; y < n_spins; y++) {
     for (int x= 0; x < n_spins; x++){
-      if (temp < 1.5) spin_matrix[y][x] = 1; // spin orientation for the ground state
+      spin_matrix[y][x] = 1; // spin orientation for the ground state
       M +=  (double) spin_matrix[y][x];
     }
   }
@@ -56,8 +97,57 @@ void initialize(int n_spins, double temp, int **spin_matrix,
      spin_matrix[y][periodic(x,n_spins,-1)]);
     }
   }
-}
+}// end function initialise
 
+// function to initialise energy, spin matrix and magnetization
+void dynamic_initialize(int n_spins, double temp, int **spin_matrix,
+        double& E, double& M, double initial_temp)
+{
+  // setup spin matrix and intial magnetization
+  for(int y =0; y < n_spins; y++) {
+    for (int x= 0; x < n_spins; x++){
+      if (temp <= initial_temp) spin_matrix[y][x] = 1; // spin orientation for the ground state
+      M +=  (double) spin_matrix[y][x];
+    }
+  }
+  // setup initial energy
+  for(int y =0; y < n_spins; y++) {
+    for (int x= 0; x < n_spins; x++){
+      E -=  (double) spin_matrix[y][x]*
+    (spin_matrix[periodic(y,n_spins,-1)][x] +
+     spin_matrix[y][periodic(x,n_spins,-1)]);
+    }
+  }
+}// end function initialise
+
+// function to initialise energy, spin matrix and magnetization
+void random_initialize(int n_spins, double temp, int **spin_matrix,
+        double& E, double& M)
+{
+  random_device ran;
+  mt19937_64 gen(ran());
+  uniform_real_distribution<double> RandomNumberGenerator(0.0,1.0);
+  // setup spin matrix and intial magnetization
+  for(int y =0; y < n_spins; y++) {
+    for (int x= 0; x < n_spins; x++){
+      if ( RandomNumberGenerator(gen)>0.5){
+          spin_matrix[y][x] = 1; // spin orientation.
+      }
+      else {
+      spin_matrix[y][x] = -1; // spin orientation.
+      }
+      M +=  (double) spin_matrix[y][x];
+    }
+  }
+  // setup initial energy
+  for(int y =0; y < n_spins; y++) {
+    for (int x= 0; x < n_spins; x++){
+      E -=  (double) spin_matrix[y][x]*
+    (spin_matrix[periodic(y,n_spins,-1)][x] +
+     spin_matrix[y][periodic(x,n_spins,-1)]);
+    }
+  }
+}// end function initialise
 
 
 
@@ -81,13 +171,13 @@ void initialize(int n_spins, double temp, int **spin_matrix,
 
 
 
-vec temperature_integration(int n_spins, int mcs, double temp)
+vec isingmodel_cold_start(int n_spins, int mcs, double temp)
 {
   long idum;
   int **spin_matrix;
   double w[17],  E, M;
-  vec average(5);
-
+  double average[5];
+  double count[6];
 
   spin_matrix = (int**) matrix(n_spins, n_spins, sizeof(int));
   idum = -1; // random starting point
@@ -98,18 +188,129 @@ vec temperature_integration(int n_spins, int mcs, double temp)
     for( int de =-8; de <= 8; de++) w[de+8] = 0;
     for( int de =-8; de <= 8; de+=4) w[de+8] = exp(-de/temp);
     // initialise array for expectation values
-    for( int i = 0; i < 5; i++) average(i) = 0.;
-    initialize(n_spins, temp, spin_matrix, E, M);
+    for( int i = 0; i < 5; i++) average[i] = 0.;
+    for( int i = 0; i < 6; i++) count[i] = 0.;
+    random_initialize(n_spins, temp, spin_matrix, E, M);
+    // start Monte Carlo computation
+    for (int cycles = 1; cycles <= mcs; cycles++){
+      Counting_Metropolis(n_spins, idum, spin_matrix, E, M, w, count);
+      // update expectation values
+      average[0] += E;    average[1] += E*E;
+      average[2] += M;    average[3] += M*M; average[4] += fabs(M);
+
+    }
+  //cout<< count<<endl;
+  vec ans(11);
+  for (int i=0; i<5; i++){
+  ans(i) = average[i];
+  }
+  for (int i=5; i<11; i++){
+  ans(i) = count[i-5];
+  }
+  //ans(5) = count;
+  free_matrix((void **) spin_matrix); // free memory
+  return (ans);
+
+};
+
+
+
+
+ofstream ofile;
+// inline function for periodic boundary conditions
+void read_input(int &n_spins, int &mcs, double &initial_temp,double &final_temp,double &temp_step){
+   /* cout << "Size of latice (LxL) L ; ";
+    cin >> n_spins;
+    cout << "Numbers off Montecarlo integration points ; ";
+    cin >> mcs;
+    cout << "Numbers off  Initial temperature ; ";
+    cin >> initial_temp;
+    cout << "Numbers off final temperature ; ";
+    cin >> final_temp;
+    cout << "Numbers off temperature step ; ";
+    cin >> temp_step;
+*/
+    n_spins = 20;
+    mcs = 1000;
+    initial_temp = 2;
+    final_temp = 2.3;
+    temp_step = 0.05;
+
+};
+
+void output(int n_spins, int mcs, double temp, double *average){
+    cout<<"Antall Monte Carlo integrasjonspoeng ; ";
+    cout<<mcs<<endl;
+    /*cout<<"Antall elektroner som spinner i positiv rettning ; ";
+    cout<<n_spins*n_spins<<endl;
+
+    cout<<"Temperatur i simuleringen ; ";
+    cout<<temp<<endl;
+
+    cout<<"<e> ; ";
+    cout<<average[0]/(mcs*n_spins*n_spins)<<endl;
+
+    cout<<"Cv ; ";
+    cout<<(( average[1]/(mcs) ) - ((average[0]/(mcs))*(average[0]/(mcs))))/(n_spins*n_spins)<<endl;
+
+
+    cout<<"<m> ; ";
+    cout<<average[2]/(mcs*n_spins*n_spins)<<endl;
+
+    cout<<"<|m|> ; ";
+    cout<<average[4]/(mcs*n_spins*n_spins)<<endl;
+
+    cout<<"Susceptibilitet ; ";
+    cout<<(( average[3]/(mcs) ) - ((average[4]/(mcs))*(average[4]/(mcs))))/(n_spins*n_spins)<<endl;
+    */
+
+    ofile <<temp;
+    ofile << setw(20) << setprecision(8) <<  average[0]/(mcs*n_spins*n_spins);
+    ofile << setw(20) << setprecision(8) <<  (( average[1]/(mcs) ) - ((average[0]/(mcs))*(average[0]/(mcs))))/(n_spins*n_spins);
+    ofile << setw(20) << setprecision(8) << average[2]/(mcs*n_spins*n_spins);
+    ofile << setw(20) << setprecision(8) << average[4]/(mcs*n_spins*n_spins);
+    ofile << setw(20) << setprecision(8) <<  (( average[3]/(mcs) ) - ((average[4]/(mcs))*(average[4]/(mcs))))/(n_spins*n_spins)<<endl;
+};
+
+
+
+void ising_model_dynamic_start()
+{
+  char *outfilename;
+  long idum;
+  int **spin_matrix, n_spins, mcs;
+  double w[17], average[5], initial_temp, final_temp, E, M, temp_step;
+
+
+  outfilename="Simulation_4d.dat";
+
+  ofile.open(outfilename);
+  //    Read in initial values such as size of lattice, temp and cycles
+  read_input(n_spins, mcs, initial_temp, final_temp, temp_step);
+  spin_matrix = (int**) matrix(n_spins, n_spins, sizeof(int));
+  idum = -1; // random starting point
+  for ( double temp = initial_temp; temp <= final_temp; temp+=temp_step){
+    //    initialise energy and magnetization
+    E = M = 0.;
+    // setup array for possible energy changes
+    for( int de =-8; de <= 8; de++) w[de+8] = 0;
+    for( int de =-8; de <= 8; de+=4) w[de+8] = exp(-de/temp);
+    // initialise array for expectation values
+    for( int i = 0; i < 5; i++) average[i] = 0.;
+    dynamic_initialize(n_spins, (double) temp, spin_matrix, E, M, initial_temp);
     // start Monte Carlo computation
     for (int cycles = 1; cycles <= mcs; cycles++){
       Metropolis(n_spins, idum, spin_matrix, E, M, w);
       // update expectation values
-      average(0) += E;    average(1) += E*E;
-      average(2) += M;    average(3) += M*M; average(4) += fabs(M);
+      average[0] += E;    average[1] += E*E;
+      average[2] += M;    average[3] += M*M; average[4] += fabs(M);
     }
-
-
-  return (average);
+    output(n_spins, mcs, temp, average);
+  }
   free_matrix((void **) spin_matrix); // free memory
-};
+  ofile.close();  // close output file
+
+}
+
+
 #endif // MONTE_CARO_H
