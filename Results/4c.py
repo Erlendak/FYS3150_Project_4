@@ -56,9 +56,34 @@ plt.xscale('log')
 #plt.ylim([0.15,0.20])
 plt.show()
 
-plt.plot(temp1_20x20[0], temp1_20x20[6] , label = "t = 1 ")#,marker ="o")
-plt.plot(temp24_20x20[0], temp24_20x20[6] , label = "t = 2.4 ")#,marker ="o")
-plt.title("Godkjente konfigurasjoner\nKald start",size=17)
+
+plt.plot(temp1_20x20[0], (1/1)*temp1_20x20[2] , label = "t = 1 "+ r'$C_v $')#,marker ="o")
+plt.plot(temp24_20x20[0],(1/(1*(2.4)**2))* temp24_20x20[2] , label = "t = 2.4 "+r'$C_v$')#,marker ="o")
+plt.title("Varmen "r'$Cv$'+"\nRandom start",size=17)# Vi trenger kald start.
+plt.ylabel("Energi utbytte ; ",size=15)
+plt.xlabel("Integrasjonspoeng ; ",size=15)
+plt.grid()
+plt.legend()
+plt.xscale('log')
+
+#plt.ylim([0.15,0.20])
+plt.show()
+
+plt.plot(temp1_20x20[0], (1/1)*temp1_20x20[5] , label = "t = 1 "+ r'$C_v $')#,marker ="o")
+plt.plot(temp24_20x20[0],(1/(1*(2.4)))* temp24_20x20[5] , label = "t = 2.4 "+r'$C_v$')#,marker ="o")
+plt.title("Suseptibilitet "+r'$\chi$'+"\nRandom start",size=17)# Vi trenger kald start.
+plt.ylabel("Magnetismasjons utbytte ; ",size=15)
+plt.xlabel("Integrasjonspoeng ; ",size=15)
+plt.grid()
+plt.legend()
+plt.xscale('log')
+
+#plt.ylim([0.15,0.20])
+plt.show()
+
+plt.plot(temp1_20x20[0], temp1_20x20[6]/temp1_20x20[0] , label = "t = 1 ")#,marker ="o")
+plt.plot(temp24_20x20[0], temp24_20x20[6]/temp24_20x20[0] , label = "t = 2.4 ")#,marker ="o")
+plt.title("Godkjente konfigurasjons rate\nKald start",size=17)
 plt.ylabel("Antall godkjente konfigurasjoner ; ",size=15)
 plt.xlabel("Integrasjonspoeng ; ",size=15)
 plt.grid()
@@ -74,7 +99,7 @@ plt.plot(temp1_20x20[0], temp1_20x20[8] , label = r'$E_i$'+" = -j4 ")#,marker ="
 plt.plot(temp1_20x20[0], temp1_20x20[9] , label = r'$E_i$'+" = j0 ")#,marker ="o")
 plt.plot(temp1_20x20[0], temp1_20x20[10] , label = r'$E_i$'+" = j4 ",marker ="o")
 plt.plot(temp1_20x20[0], temp1_20x20[11] , label = r'$E_i$'+" = j8 ",marker ="o")
-plt.title("Sansynlighets distrubisjon T = 1\nKald start",size=17)
+plt.title(r'$\Delta E $'+" T = 1\nRandom start",size=17) #Vi trenger kald start også
 plt.ylabel("Prosent ;  %",size=15)
 plt.xlabel("Integrasjonspoeng ; ",size=15)
 plt.grid()
@@ -89,7 +114,7 @@ plt.plot(temp24_20x20[0], temp24_20x20[8] , label = r'$E_i$'+" = -j4 ")#,marker 
 plt.plot(temp24_20x20[0], temp24_20x20[9] , label = r'$E_i$'+" = j0 ")#,marker ="o")
 plt.plot(temp24_20x20[0], temp24_20x20[10] , label = r'$E_i$'+" = j4 ",marker ="o")
 plt.plot(temp24_20x20[0], temp24_20x20[11] , label = r'$E_i$'+" = j8 ",marker ="o")
-plt.title("Sansynlighets distrubisjon T = 2.4\nKald start",size=17)
+plt.title(r'$\Delta E $'+"T = 2.4\nRandom start",size=17)
 plt.ylabel("Prosent ;  %",size=15)
 plt.xlabel("Integrasjonspoeng ; ",size=15)
 plt.grid()
