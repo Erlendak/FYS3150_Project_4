@@ -178,7 +178,11 @@ vec isingmodel_cold_start(int n_spins, int mcs, double temp)
   double w[17],  E, M;
   double average[5];
   double count[6];
-
+  ofstream cfile;
+  string strtemp = to_string(temp);
+  string cfilename = "Pe_temp"+strtemp +".dat";
+  cfile.open(cfilename);
+  cfile << setiosflags(ios::showpoint | ios::uppercase);
   spin_matrix = (int**) matrix(n_spins, n_spins, sizeof(int));
   idum = -1; // random starting point
 
@@ -198,6 +202,7 @@ vec isingmodel_cold_start(int n_spins, int mcs, double temp)
       average[0] += E;    average[1] += E*E;
       average[2] += M;    average[3] += M*M; average[4] += fabs(M);
 
+      cfile << setw(15) << setprecision(8) <<  E<<endl;
     }
   //cout<< count<<endl;
   vec ans(11);
@@ -216,9 +221,10 @@ vec isingmodel_cold_start(int n_spins, int mcs, double temp)
 
 
 
+//
 ofstream ofile;
 // inline function for periodic boundary conditions
-void read_input(int &n_spins, int &mcs, double &initial_temp,double &final_temp,double &temp_step){
+void read_input(int &initial_spins, int &final_spins, int &mcs, double &initial_temp,double &final_temp,double &temp_step){
    /* cout << "Size of latice (LxL) L ; ";
     cin >> n_spins;
     cout << "Numbers off Montecarlo integration points ; ";
@@ -230,7 +236,8 @@ void read_input(int &n_spins, int &mcs, double &initial_temp,double &final_temp,
     cout << "Numbers off temperature step ; ";
     cin >> temp_step;
 */
-    n_spins = 20;
+    initial_spins = 20;
+    final_spins = 100;
     mcs = 1000;
     initial_temp = 2;
     final_temp = 2.3;
@@ -239,14 +246,15 @@ void read_input(int &n_spins, int &mcs, double &initial_temp,double &final_temp,
 };
 
 void output(int n_spins, int mcs, double temp, double *average){
-    cout<<"Antall Monte Carlo integrasjonspoeng ; ";
-    cout<<mcs<<endl;
-    /*cout<<"Antall elektroner som spinner i positiv rettning ; ";
+
+    cout<<"Antall elektroner som spinner ; ";
     cout<<n_spins*n_spins<<endl;
 
     cout<<"Temperatur i simuleringen ; ";
     cout<<temp<<endl;
-
+    /*
+    cout<<"Antall Monte Carlo integrasjonspoeng ; ";
+    cout<<mcs<<endl;
     cout<<"<e> ; ";
     cout<<average[0]/(mcs*n_spins*n_spins)<<endl;
 
@@ -265,6 +273,7 @@ void output(int n_spins, int mcs, double temp, double *average){
     */
 
     ofile <<temp;
+    ofile << setw(20) << setprecision(8) << n_spins ;
     ofile << setw(20) << setprecision(8) <<  average[0]/(mcs*n_spins*n_spins);
     ofile << setw(20) << setprecision(8) <<  (( average[1]/(mcs) ) - ((average[0]/(mcs))*(average[0]/(mcs))))/(n_spins*n_spins);
     ofile << setw(20) << setprecision(8) << average[2]/(mcs*n_spins*n_spins);
@@ -278,15 +287,17 @@ void ising_model_dynamic_start()
 {
   char *outfilename;
   long idum;
-  int **spin_matrix, n_spins, mcs;
+  int **spin_matrix, initial_spins, final_spins, mcs;
   double w[17], average[5], initial_temp, final_temp, E, M, temp_step;
 
-
-  outfilename="Simulation_4d.dat";
+ //ofstream ofile;
+  outfilename="simulation_4d.dat";
 
   ofile.open(outfilename);
   //    Read in initial values such as size of lattice, temp and cycles
-  read_input(n_spins, mcs, initial_temp, final_temp, temp_step);
+  read_input(initial_spins, final_spins,mcs, initial_temp, final_temp, temp_step);
+
+  for ( int n_spins = initial_spins; n_spins <= final_spins; n_spins+=20){
   spin_matrix = (int**) matrix(n_spins, n_spins, sizeof(int));
   idum = -1; // random starting point
   for ( double temp = initial_temp; temp <= final_temp; temp+=temp_step){
@@ -306,8 +317,11 @@ void ising_model_dynamic_start()
       average[2] += M;    average[3] += M*M; average[4] += fabs(M);
     }
     output(n_spins, mcs, temp, average);
+
   }
-  free_matrix((void **) spin_matrix); // free memory
+   free_matrix((void **) spin_matrix); // free memory
+  }
+
   ofile.close();  // close output file
 
 }

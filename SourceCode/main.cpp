@@ -14,18 +14,21 @@ using namespace  arma;
 int main()
 {
     //test_temp_1();
-
+/*
     double temp= 1;
     int n_spins = 20;
     int mcs;
+
     vec average;
-    int _E = 60;
+
+    int _E = 45;
     double _x = 1.3;
     int _start = 7;
     ofstream afile;
     string afilename = "20x20_temp_1.dat";
     afile.open(afilename);
     afile << setiosflags(ios::showpoint | ios::uppercase);
+
     for (int i=_start;i<_E;i++){
             mcs = pow(_x,i);
             cout <<  mcs <<endl;
@@ -100,5 +103,8 @@ int main()
     cout<<"Susceptibilitet ; ";
     cout<<(( average(3)/(mcs) ) - ((average(4)/(mcs))*(average(4)/(mcs))))/(n_spins*n_spins)<<endl;
     cout<<"\n\n\n"; */
+
+    ising_model_dynamic_start();
+
     return 0;
 };
