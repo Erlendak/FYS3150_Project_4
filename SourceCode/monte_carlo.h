@@ -7,6 +7,7 @@
 #include "lib.h"
 #include <string>
 #include <armadillo>
+#include <omp.h>
 
 using namespace arma;
 
@@ -180,7 +181,54 @@ vec isingmodel_cold_start(int n_spins, int mcs, double temp)
   double count[6];
   ofstream cfile;
   string strtemp = to_string(temp);
-  string cfilename = "Pe_temp"+strtemp +".dat";
+  string cfilename = "Pe_temp"+strtemp +"_cold.dat";
+  cfile.open(cfilename);
+  cfile << setiosflags(ios::showpoint | ios::uppercase);
+  spin_matrix = (int**) matrix(n_spins, n_spins, sizeof(int));
+  idum = -1; // random starting point
+
+    //    initialise energy and magnetization
+    E = M = 0.;
+    // setup array for possible energy changes
+    for( int de =-8; de <= 8; de++) w[de+8] = 0;
+    for( int de =-8; de <= 8; de+=4) w[de+8] = exp(-de/temp);
+    // initialise array for expectation values
+    for( int i = 0; i < 5; i++) average[i] = 0.;
+    for( int i = 0; i < 6; i++) count[i] = 0.;
+    cold_start_initialize(n_spins, temp, spin_matrix, E, M);
+    // start Monte Carlo computation
+    for (int cycles = 1; cycles <= mcs; cycles++){
+      Counting_Metropolis(n_spins, idum, spin_matrix, E, M, w, count);
+      // update expectation values
+      average[0] += E;    average[1] += E*E;
+      average[2] += M;    average[3] += M*M; average[4] += fabs(M);
+
+      cfile << setw(15) << setprecision(8) <<  E<<endl;
+    }
+  //cout<< count<<endl;
+  vec ans(11);
+  for (int i=0; i<5; i++){
+  ans(i) = average[i];
+  }
+  for (int i=5; i<11; i++){
+  ans(i) = count[i-5];
+  }
+  //ans(5) = count;
+  free_matrix((void **) spin_matrix); // free memory
+  return (ans);
+
+};
+
+vec isingmodel_random_start(int n_spins, int mcs, double temp)
+{
+  long idum;
+  int **spin_matrix;
+  double w[17],  E, M;
+  double average[5];
+  double count[6];
+  ofstream cfile;
+  string strtemp = to_string(temp);
+  string cfilename = "Pe_temp"+strtemp +"_random.dat";
   cfile.open(cfilename);
   cfile << setiosflags(ios::showpoint | ios::uppercase);
   spin_matrix = (int**) matrix(n_spins, n_spins, sizeof(int));
@@ -236,11 +284,11 @@ void read_input(int &initial_spins, int &final_spins, int &mcs, double &initial_
     cout << "Numbers off temperature step ; ";
     cin >> temp_step;
 */
-    initial_spins = 20;
+    initial_spins = 40;
     final_spins = 100;
-    mcs = 1000;
+    mcs = 100000;
     initial_temp = 2;
-    final_temp = 2.3;
+    final_temp = 2.6;
     temp_step = 0.05;
 
 };
@@ -288,7 +336,7 @@ void ising_model_dynamic_start()
   char *outfilename;
   long idum;
   int **spin_matrix, initial_spins, final_spins, mcs;
-  double w[17], average[5], initial_temp, final_temp, E, M, temp_step;
+  double w[17], average[5], initial_temp, final_temp, E, M, temp_step,temp;
 
  //ofstream ofile;
   outfilename="simulation_4d.dat";
@@ -296,19 +344,33 @@ void ising_model_dynamic_start()
   ofile.open(outfilename);
   //    Read in initial values such as size of lattice, temp and cycles
   read_input(initial_spins, final_spins,mcs, initial_temp, final_temp, temp_step);
+  int _n = int((final_temp-initial_temp)/temp_step)+1;
+
+
+
 
   for ( int n_spins = initial_spins; n_spins <= final_spins; n_spins+=20){
-  spin_matrix = (int**) matrix(n_spins, n_spins, sizeof(int));
-  idum = -1; // random starting point
-  for ( double temp = initial_temp; temp <= final_temp; temp+=temp_step){
+
+      // random starting point
+
+  #pragma omp parallel for  private(w,average,spin_matrix,E,M,temp,idum) shared(n_spins) ordered
+  for ( int k = 0; k <= _n; k+=1){
+  //for ( double temp = initial_temp; temp <= final_temp; temp+=temp_step){
     //    initialise energy and magnetization
+    spin_matrix = (int**) matrix(n_spins, n_spins, sizeof(int));
     E = M = 0.;
+    idum = -1;
+    //cout<<omp_get_thread_num()<<endl;
+    temp = initial_temp+(temp_step*k);
+    //int nthreads = omp_get_num_threads();
+    //printf("Using %d threads outside parallel loop\n",nthreads);
+
     // setup array for possible energy changes
     for( int de =-8; de <= 8; de++) w[de+8] = 0;
     for( int de =-8; de <= 8; de+=4) w[de+8] = exp(-de/temp);
     // initialise array for expectation values
     for( int i = 0; i < 5; i++) average[i] = 0.;
-    dynamic_initialize(n_spins, (double) temp, spin_matrix, E, M, initial_temp);
+    random_initialize(n_spins, (double) temp, spin_matrix, E, M);
     // start Monte Carlo computation
     for (int cycles = 1; cycles <= mcs; cycles++){
       Metropolis(n_spins, idum, spin_matrix, E, M, w);
@@ -316,10 +378,11 @@ void ising_model_dynamic_start()
       average[0] += E;    average[1] += E*E;
       average[2] += M;    average[3] += M*M; average[4] += fabs(M);
     }
+    //#pragma omp ordered
     output(n_spins, mcs, temp, average);
+}
 
-  }
-   free_matrix((void **) spin_matrix); // free memory
+   //free_matrix((void **) spin_matrix); // free memory
   }
 
   ofile.close();  // close output file
