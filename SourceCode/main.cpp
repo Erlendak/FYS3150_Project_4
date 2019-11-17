@@ -160,7 +160,7 @@ int main()
     cout<<(( average(3)/(mcs) ) - ((average(4)/(mcs))*(average(4)/(mcs))))/(n_spins*n_spins)<<endl;
     cout<<"\n\n\n"; */
 
-    ising_model_dynamic_start();
+    ising_model_simulation();
 
     return 0;
 };

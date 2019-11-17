@@ -289,7 +289,7 @@ void read_input(int &initial_spins, int &final_spins, int &mcs, double &initial_
     mcs = 100000;
     initial_temp = 2;
     final_temp = 2.6;
-    temp_step = 0.05;
+    temp_step = 0.01;
 
 };
 
@@ -331,7 +331,7 @@ void output(int n_spins, int mcs, double temp, double *average){
 
 
 
-void ising_model_dynamic_start()
+void ising_model_simulation()
 {
   char *outfilename;
   long idum;
@@ -339,7 +339,7 @@ void ising_model_dynamic_start()
   double w[17], average[5], initial_temp, final_temp, E, M, temp_step,temp;
 
  //ofstream ofile;
-  outfilename="simulation_4d.dat";
+  outfilename="simulation_4e.dat";
 
   ofile.open(outfilename);
   //    Read in initial values such as size of lattice, temp and cycles
@@ -353,7 +353,7 @@ void ising_model_dynamic_start()
 
       // random starting point
 
-  #pragma omp parallel for  private(w,average,spin_matrix,E,M,temp,idum) shared(n_spins) ordered
+  #pragma omp parallel for  private(w,average,spin_matrix,E,M,temp,idum) shared(n_spins) //ordered
   for ( int k = 0; k <= _n; k+=1){
   //for ( double temp = initial_temp; temp <= final_temp; temp+=temp_step){
     //    initialise energy and magnetization
