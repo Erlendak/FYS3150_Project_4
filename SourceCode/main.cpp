@@ -167,11 +167,18 @@ int main()
 
 
     /*
-    Now we run our real simulation,
+
+    Now we run our real simulation, from temperature 2.0 to 2.6 and latice size 40x40
+    to 100x100 with step size of L = 20.
 
     */
 
-    ising_model_simulation();
 
+    clock_t start = clock();
+
+    ising_model_simulation();
+    clock_t finish= clock();
+    cout << "Time consumtion ; ";
+    cout<<finish- start <<endl;
     return 0;
 };
