@@ -378,7 +378,7 @@ void ising_model_simulation()
       average[0] += E;    average[1] += E*E;
       average[2] += M;    average[3] += M*M; average[4] += fabs(M);
     }
-    //#pragma omp ordered
+    #pragma omp critical //ordered
     output(n_spins, mcs, temp, average);
 }
 
