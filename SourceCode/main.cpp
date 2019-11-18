@@ -18,9 +18,9 @@ int main()
     //We start with checking if Open MP works, and to tell us how many threads are available.
     int mthreads = omp_get_max_threads();
     printf("There are %d threads available at a time\n",mthreads);
-
+    tests();
     // Run unit tests.
-    test_temp_1();
+    //test_temp_1();
 
     /*
     Then we begin our prosses with studying how the Monte Carlo simulations changes with the amount of
@@ -174,11 +174,11 @@ int main()
     */
 
 
-    clock_t start = clock();
+    clock_t start =clock();
 
     ising_model_simulation();
     clock_t finish= clock();
     cout << "Time consumtion ; ";
-    cout<<finish- start <<endl;
+    cout<<((((double)finish - (double)start)/CLOCKS_PER_SEC))<<endl;
     return 0;
 };
