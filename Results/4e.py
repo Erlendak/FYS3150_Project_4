@@ -3,14 +3,6 @@ import numpy as np
 import sys
 
 
-X = np.array([[ 1,  2,  1,  3],
-       [ 1,  2,  3,  4],
-       [12, 35,  6,  6]])
-
-Y = X[X[:, 2].argsort()]
-print(Y)
-
-
 
 
 simulation = []
@@ -80,7 +72,7 @@ plt.plot(latice40x40[0], latice40x40[2] , label = "40x40    <E>")#,marker ="o")
 plt.plot(latice60x60[0], latice60x60[2] , label = "60x60  <E>")#,marker ="o")
 plt.plot(latice80x80[0], latice80x80[2] , label = "80x80    <E>")#,marker ="o")
 plt.plot(latice100x100[0], latice100x100[2] , label = "100x100  <E>")#,marker ="o")
-plt.title("Energi Per Helium Atom",size=17)
+plt.title("Energi Per Spin",size=17)
 plt.ylabel("Energi ; ",size=15)
 plt.xlabel("Temperatur ; ",size=15)
 plt.grid()
@@ -131,5 +123,42 @@ plt.grid()
 plt.legend()
 #plt.yscale('log')
 
+#plt.ylim([0.15,0.20])
+plt.show()
+
+T40x40 = latice40x40[0][(latice40x40[3].argmax())]
+T60x60 = latice60x60[0][(latice60x60[3].argmax())]
+T80x80 = latice80x80[0][(latice80x80[3].argmax())]
+T100x100 = latice100x100[0][(latice100x100[3].argmax())]
+print(T40x40)
+print(T60x60)
+print(T80x80)
+print(T100x100)
+
+x = np.linspace(0,150,500)
+
+_y = np.array([T40x40, T60x60, T80x80, T100x100 ])
+_x = np.array([1/40, 1/60, 1/80 , 1/100  ])
+[a,b] = np.polyfit(_x, _y, deg = 1)
+plt.subplot(2,1,1)
+plt.plot(x,a*x +b , label = "L"+r'$\approx \infty$')#,marker ="o")
+plt.gca().invert_xaxis()
+plt.title("Fase trasisjon",size=17)
+plt.ylabel("Temperatur ; ",size=15)
+plt.xlabel("L ; ",size=15)
+plt.grid()
+plt.legend()
+
+x = np.linspace(20,50000,500)
+plt.subplot(2,1,2)
+plt.plot(x,a*x +b , label = "L"+r'$\approx \infty$')#,marker ="o")
+plt.gca().invert_xaxis()
+plt.title("Fase trasisjon\n Zoomed out",size=17)
+plt.ylabel("Temperatur ; ",size=15)
+plt.xlabel("L ; ",size=15)
+plt.grid()
+plt.legend()
+#plt.yscale('log')
+plt.subplots_adjust(hspace=0.8)
 #plt.ylim([0.15,0.20])
 plt.show()
